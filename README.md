@@ -57,8 +57,9 @@ docker build -f Dockerfile.minio -t safebucket-railway-minio:test .
 ## Verified vs. not
 
 - ✅ Storage image contract-tested in CI: unattended boot, bucket creation, path-style addressing, CORS preflight for presigned browser uploads.
-- ✅ Verified end-to-end on a live Railway project built from this exact config (services, images, variables, reference strings): admin login, bucket creation, presigned upload through the MinIO public domain, upload confirmation, and a byte-identical presigned download.
-- ⚠️ The composer template itself (assembled by hand from `railway.template.json`) has not been click-deployed. Deploy it once before publishing to the marketplace.
+- ✅ The published template itself was click-deployed and verified end to end: `${{secret()}}` generation, cross-service references, admin login, bucket creation, presigned upload through the MinIO public domain, and a byte-identical presigned download — all on first boot with no manual steps beyond the two admin fields.
+
+The template is live: https://railway.com/deploy/safebucket-template
 
 Two things learned the hard way, already baked in:
 
