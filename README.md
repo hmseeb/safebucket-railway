@@ -56,5 +56,11 @@ docker build -f Dockerfile.minio -t safebucket-railway-minio:test .
 
 ## Verified vs. not
 
-- ✅ Storage image contract-tested locally: unattended boot, bucket creation, path-style addressing, CORS preflight for presigned browser uploads.
-- ⚠️ Not yet verified end-to-end on Railway itself (template composer setup + a live deploy). Deploy the template once before publishing — in particular confirm presigned uploads through the MinIO public domain and login with the prompted admin credentials.
+- ✅ Storage image contract-tested in CI: unattended boot, bucket creation, path-style addressing, CORS preflight for presigned browser uploads.
+- ✅ Verified end-to-end on a live Railway project built from this exact config (services, images, variables, reference strings): admin login, bucket creation, presigned upload through the MinIO public domain, upload confirmation, and a byte-identical presigned download.
+- ⚠️ The composer template itself (assembled by hand from `railway.template.json`) has not been click-deployed. Deploy it once before publishing to the marketplace.
+
+Two things learned the hard way, already baked in:
+
+- `PGDATA` must point at a **subdirectory** of the volume mount — Railway volumes ship with a `lost+found` directory at the root and Postgres refuses to initialize into a non-empty directory.
+- On first deploy the app may restart a few times while Postgres runs its initial setup; the `ON_FAILURE` restart policy rides through it.

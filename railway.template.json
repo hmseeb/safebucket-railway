@@ -203,8 +203,8 @@
       },
       "variables": {
         "PGDATA": {
-          "defaultValue": "/var/lib/postgresql/data",
-          "description": "The folder on disk where the database keeps your data. Leave this alone."
+          "defaultValue": "/var/lib/postgresql/data/pgdata",
+          "description": "The folder on disk where the database keeps your data. A subdirectory of the mount, because the volume root contains a lost+found directory that Postgres refuses to initialize into. Leave this alone."
         },
         "POSTGRES_DB": {
           "defaultValue": "safebucket",
