@@ -1,0 +1,26 @@
+# MinIO with its server command and bucket creation baked in, so the Railway
+# template needs no startCommand and no separate init service.
+FROM minio/minio:RELEASE.2025-09-07T16-13-09Z
+
+LABEL org.opencontainers.image.title="MinIO for Safebucket on Railway" \
+      org.opencontainers.image.description="MinIO that starts unattended and creates the Safebucket storage bucket" \
+      org.opencontainers.image.source="https://github.com/hmseeb/safebucket-railway"
+
+# Only the password varies per deploy, so everything else is baked in and never
+# reaches the template.
+# PORT is a local-run fallback only. Railway injects its own PORT at runtime,
+# which overrides anything set here, so the template must pin PORT=9000
+# explicitly — Safebucket addresses this service at a fixed port.
+# CORS stays at MinIO's default (allow all origins): the browser talks to this
+# service directly with presigned URLs, and the presigned signature is the
+# actual access control.
+ENV PORT=9000 \
+    MINIO_ROOT_USER=safebucket \
+    MINIO_BROWSER=off \
+    SAFEBUCKET_S3_BUCKET=safebucket
+
+COPY --chmod=0755 minio-boot /usr/local/bin/minio-boot
+
+# The base image sets CMD, which would otherwise arrive as stray arguments.
+ENTRYPOINT ["/usr/local/bin/minio-boot"]
+CMD []

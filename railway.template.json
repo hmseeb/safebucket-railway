@@ -1,0 +1,284 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "name": "Safebucket",
+  "description": "Self-host Safebucket, the secure file sharing platform. End-to-end file management with buckets, sharing, MFA, and an audit trail. Includes Postgres and S3-compatible file storage.",
+  "services": {
+    "safebucket": {
+      "name": "Safebucket",
+      "icon": "https://raw.githubusercontent.com/safebucket/safebucket/main/web/public/logo512.png",
+      "source": {
+        "image": "ghcr.io/safebucket/safebucket:latest"
+      },
+      "deploy": {
+        "healthcheckPath": "/",
+        "restartPolicyType": "ON_FAILURE",
+        "restartPolicyMaxRetries": 10
+      },
+      "networking": {
+        "serviceDomains": {
+          "safebucket": {}
+        }
+      },
+      "variables": {
+        "PORT": {
+          "defaultValue": "8080",
+          "description": "The port the Safebucket server listens on inside its container. Leave this alone."
+        },
+        "APP__PORT": {
+          "defaultValue": "8080",
+          "description": "Same port, in the format Safebucket reads. Leave this alone."
+        },
+        "APP__ADMIN_EMAIL": {
+          "description": "The email address for the first admin account. You log in with this after the deploy finishes."
+        },
+        "APP__ADMIN_PASSWORD": {
+          "description": "The password for the first admin account. Pick something strong; you can enable MFA after logging in."
+        },
+        "APP__API_URL": {
+          "defaultValue": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+          "description": "The public web address of your Safebucket. Filled in automatically from this service's domain."
+        },
+        "APP__WEB_URL": {
+          "defaultValue": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+          "description": "Where the web app lives. Same address as the API because the UI is bundled. Filled in automatically."
+        },
+        "APP__ALLOWED_ORIGINS": {
+          "defaultValue": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+          "description": "Which websites are allowed to talk to your Safebucket from a browser. Defaults to your own domain, which is what you want."
+        },
+        "APP__TOKEN_SECRET": {
+          "defaultValue": "${{secret(43, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/\")}}",
+          "description": "Signs login sessions. Generated fresh for your deployment. Never share it and never change it after launch."
+        },
+        "APP__MFA_ENCRYPTION_KEY": {
+          "defaultValue": "${{secret(32)}}",
+          "description": "Encrypts users' two-factor authentication secrets. Must stay exactly 32 characters. Generated fresh; never change it after users enroll MFA."
+        },
+        "APP__MFA_REQUIRED": {
+          "defaultValue": "false",
+          "description": "Set to true to force every user to set up two-factor authentication."
+        },
+        "APP__TRUSTED_PROXIES": {
+          "defaultValue": "0.0.0.0/0,::/0",
+          "description": "Tells Safebucket to trust Railway's edge proxy so the audit trail records real visitor addresses instead of the proxy's."
+        },
+        "APP__TRASH_RETENTION_DAYS": {
+          "defaultValue": "7",
+          "description": "How many days deleted files stay in the trash before being removed for good."
+        },
+        "APP__MAX_UPLOAD_SIZE": {
+          "defaultValue": "53687091200",
+          "description": "The largest allowed upload, in bytes. Defaults to 50 GB."
+        },
+        "APP__STATIC_FILES__ENABLED": {
+          "defaultValue": "true",
+          "description": "Serves the web app from this same service. Leave this alone."
+        },
+        "APP__LOG_LEVEL": {
+          "defaultValue": "info",
+          "description": "How chatty the server logs are. Use debug when troubleshooting."
+        },
+        "APP__PROFILE": {
+          "defaultValue": "default",
+          "description": "Runs the API and background workers together in one service. Leave this alone."
+        },
+        "DATABASE__TYPE": {
+          "defaultValue": "postgres",
+          "description": "Which kind of database to use. Leave this alone."
+        },
+        "DATABASE__POSTGRES__HOST": {
+          "defaultValue": "${{Postgres.RAILWAY_PRIVATE_DOMAIN}}",
+          "description": "The private address of the Postgres service. Filled in automatically."
+        },
+        "DATABASE__POSTGRES__PORT": {
+          "defaultValue": "5432",
+          "description": "The Postgres port. Leave this alone."
+        },
+        "DATABASE__POSTGRES__USER": {
+          "defaultValue": "${{Postgres.POSTGRES_USER}}",
+          "description": "The database account. Copied automatically from the Postgres service."
+        },
+        "DATABASE__POSTGRES__PASSWORD": {
+          "defaultValue": "${{Postgres.POSTGRES_PASSWORD}}",
+          "description": "The database password. Copied automatically from the Postgres service."
+        },
+        "DATABASE__POSTGRES__NAME": {
+          "defaultValue": "${{Postgres.POSTGRES_DB}}",
+          "description": "The database name. Copied automatically from the Postgres service."
+        },
+        "DATABASE__POSTGRES__SSLMODE": {
+          "defaultValue": "require",
+          "description": "Encrypts the database connection. The bundled Postgres supports this out of the box."
+        },
+        "CACHE__TYPE": {
+          "defaultValue": "memory",
+          "description": "Rate limits and sessions are kept in the app's own memory. Fine for a single instance; switch to a Valkey service before scaling to multiple instances."
+        },
+        "EVENTS__TYPE": {
+          "defaultValue": "memory",
+          "description": "Background jobs are queued in the app's own memory. Fine for a single instance; switch to NATS JetStream before scaling to multiple instances."
+        },
+        "EVENTS__QUEUES__NOTIFICATIONS__NAME": {
+          "defaultValue": "safebucket-notifications",
+          "description": "Internal queue name. Leave this alone."
+        },
+        "EVENTS__QUEUES__BUCKET_EVENTS__NAME": {
+          "defaultValue": "safebucket-bucket-events",
+          "description": "Internal queue name. Leave this alone."
+        },
+        "EVENTS__QUEUES__OBJECT_DELETION__NAME": {
+          "defaultValue": "safebucket-object-deletion",
+          "description": "Internal queue name. Leave this alone."
+        },
+        "STORAGE__TYPE": {
+          "defaultValue": "minio",
+          "description": "Where uploaded files live. Points at the bundled MinIO service. Leave this alone."
+        },
+        "STORAGE__MINIO__BUCKET_NAME": {
+          "defaultValue": "safebucket",
+          "description": "The storage bucket files are kept in. The MinIO service creates it on first boot. Leave this alone."
+        },
+        "STORAGE__MINIO__ENDPOINT": {
+          "defaultValue": "${{MinIO.RAILWAY_PRIVATE_DOMAIN}}:9000",
+          "description": "The private address the server uses to reach file storage. Filled in automatically."
+        },
+        "STORAGE__MINIO__EXTERNAL_ENDPOINT": {
+          "defaultValue": "https://${{MinIO.RAILWAY_PUBLIC_DOMAIN}}",
+          "description": "The public address your browser uploads and downloads files through. Filled in automatically from the MinIO service's domain."
+        },
+        "STORAGE__MINIO__CLIENT_ID": {
+          "defaultValue": "safebucket",
+          "description": "The storage account name, baked into the MinIO image. Leave this alone."
+        },
+        "STORAGE__MINIO__CLIENT_SECRET": {
+          "defaultValue": "${{MinIO.MINIO_ROOT_PASSWORD}}",
+          "description": "The password Safebucket uses to reach its file storage. Copied automatically from the MinIO service."
+        },
+        "NOTIFIER__TYPE": {
+          "defaultValue": "filesystem",
+          "description": "Where invite and share emails go. By default they are written to files inside the container instead of being sent. To send real email, change this to smtp and add the NOTIFIER__SMTP__* settings from the README."
+        },
+        "NOTIFIER__FILESYSTEM__DIRECTORY": {
+          "defaultValue": "/app/data/notifications",
+          "description": "Where unsent notification emails are written. Leave this alone."
+        },
+        "ACTIVITY__TYPE": {
+          "defaultValue": "filesystem",
+          "description": "Where the audit trail is stored. Files inside the container by default, which resets on each deploy. Switch to loki with a Loki service for a persistent audit trail."
+        },
+        "ACTIVITY__FILESYSTEM__DIRECTORY": {
+          "defaultValue": "/app/data/activity",
+          "description": "Where the audit trail files are written. Leave this alone."
+        },
+        "AUTH__PROVIDERS__KEYS": {
+          "defaultValue": "local",
+          "description": "Which login methods are enabled. Email and password by default; see the Safebucket docs to add single sign-on."
+        },
+        "AUTH__PROVIDERS__LOCAL__NAME": {
+          "defaultValue": "local",
+          "description": "Login provider setting. Leave this alone."
+        },
+        "AUTH__PROVIDERS__LOCAL__TYPE": {
+          "defaultValue": "local",
+          "description": "Login provider setting. Leave this alone."
+        },
+        "AUTH__PROVIDERS__LOCAL__SHARING__ALLOWED": {
+          "defaultValue": "true",
+          "description": "Lets users share files with people outside your Safebucket."
+        },
+        "GOGC": {
+          "defaultValue": "50",
+          "description": "Keeps the server's memory use modest. Leave this alone."
+        }
+      }
+    },
+    "postgres": {
+      "name": "Postgres",
+      "source": {
+        "image": "ghcr.io/railwayapp-templates/postgres-ssl:17"
+      },
+      "deploy": {
+        "restartPolicyType": "ON_FAILURE",
+        "restartPolicyMaxRetries": 10
+      },
+      "variables": {
+        "PGDATA": {
+          "defaultValue": "/var/lib/postgresql/data",
+          "description": "The folder on disk where the database keeps your data. Leave this alone."
+        },
+        "POSTGRES_DB": {
+          "defaultValue": "safebucket",
+          "description": "The name of the database created on first launch."
+        },
+        "POSTGRES_PASSWORD": {
+          "defaultValue": "${{secret(32)}}",
+          "description": "The database password, generated fresh for your deployment. Never share it."
+        },
+        "POSTGRES_USER": {
+          "defaultValue": "safebucket",
+          "description": "The database account created on first launch."
+        }
+      },
+      "volumeMounts": [
+        {
+          "mountPath": "/var/lib/postgresql/data",
+          "volumeName": "postgres-data",
+          "backupSchedules": [
+            "DAILY"
+          ]
+        }
+      ]
+    },
+    "minio": {
+      "name": "MinIO",
+      "source": {
+        "image": "ghcr.io/hmseeb/safebucket-railway-minio:latest"
+      },
+      "deploy": {
+        "healthcheckPath": "/minio/health/live",
+        "restartPolicyType": "ON_FAILURE",
+        "restartPolicyMaxRetries": 10
+      },
+      "networking": {
+        "serviceDomains": {
+          "minio": {}
+        }
+      },
+      "variables": {
+        "PORT": {
+          "defaultValue": "9000",
+          "description": "The port the file storage service listens on inside its container. Leave this alone."
+        },
+        "MINIO_ROOT_PASSWORD": {
+          "defaultValue": "${{secret(32)}}",
+          "description": "The admin password for your file storage. Generated fresh for your deployment. Safebucket picks it up automatically."
+        }
+      },
+      "volumeMounts": [
+        {
+          "mountPath": "/data",
+          "volumeName": "minio-data",
+          "backupSchedules": [
+            "DAILY"
+          ]
+        }
+      ]
+    }
+  },
+  "canvasConfig": {
+    "services": {
+      "safebucket": {
+        "x": 0,
+        "y": 0
+      },
+      "postgres": {
+        "x": -280,
+        "y": 180
+      },
+      "minio": {
+        "x": 280,
+        "y": 180
+      }
+    }
+  }
+}
