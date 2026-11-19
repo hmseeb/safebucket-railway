@@ -89,6 +89,24 @@ else
        "$(echo "$cors" | head -3 | tr '\n' ' ')"
 fi
 
+# 5. Railway restarts keep the container filesystem, so a second boot of the
+#    same container must come up healthy with the bucket still there.
+docker restart "$NAME" >/dev/null 2>&1
+again=""
+for _ in $(seq 1 30); do
+  code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/minio/health/live" 2>/dev/null)
+  if [[ "$code" == "200" ]] && docker logs "$NAME" 2>&1 | grep -c "bucket safebucket ready" | grep -q '^2$'; then
+    again=ok; break
+  fi
+  sleep 1
+done
+if [[ "$again" == "ok" ]]; then
+  pass "boots again after an in-place restart"
+else
+  fail "boots again after an in-place restart" "health 200 and a second 'bucket safebucket ready'" \
+       "$(docker logs "$NAME" 2>&1 | tail -3 | tr '\n' ' ')"
+fi
+
 echo
 if [[ $FAILED -eq 0 ]]; then
   echo "minio_test: PASS"

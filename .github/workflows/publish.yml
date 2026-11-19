@@ -11,9 +11,19 @@ permissions:
 
 jobs:
   publish:
+    # Images publish only from the public image-source repo, which owns the
+    # GHCR package. The private template mirror skips this job.
+    if: github.repository == 'hmseeb/safebucket-railway'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # The template pins :<version>, read from the Dockerfile's version label.
+      - name: Image version
+        id: v
+        run: |
+          ./test/version_test.sh Dockerfile.minio
+          echo "version=$(grep -oE 'org\.opencontainers\.image\.version="[^"]+"' Dockerfile.minio | cut -d'"' -f2)" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v3
 
@@ -48,6 +58,7 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/safebucket-railway-minio:latest
             ghcr.io/${{ github.repository_owner }}/safebucket-railway-minio:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/safebucket-railway-minio:${{ steps.v.outputs.version }}
 
-# ponytail: FROM digest is bumped by hand, same as buzz-railway. Automate with a
+# shortcut: FROM digest is bumped by hand, same as buzz-railway. Automate with a
 # scheduled bump PR when the cadence gets annoying.

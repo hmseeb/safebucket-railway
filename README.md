@@ -10,11 +10,11 @@ Three services, everything wired together automatically:
 |---|---|---|
 | **Safebucket** | `ghcr.io/safebucket/safebucket:latest` | The app — API + bundled web UI on one public domain |
 | **Postgres** | `ghcr.io/railwayapp-templates/postgres-ssl:17` | The database (volume + daily backups) |
-| **MinIO** | `ghcr.io/hmseeb/safebucket-railway-minio:latest` | File storage (volume + daily backups) |
+| **MinIO** | `ghcr.io/hmseeb/safebucket-railway-minio:RELEASE.2026-11-12T00-00-00Z-r1` | File storage (volume + daily backups) |
 
 The only things a deployer types are the **admin email** and **admin password**. Every secret (session signing key, MFA encryption key, database and storage passwords) is generated fresh per deployment.
 
-The MinIO service is a thin wrapper over upstream MinIO that starts unattended and creates the `safebucket` bucket on first boot — Safebucket refuses to start if the bucket is missing, and Railway has no clean one-shot init containers, so the bucket creation is baked into the image instead. The MinIO service has its own public domain because the browser uploads and downloads files directly against it with presigned URLs (verified working, including CORS preflights, by `test/minio_test.sh`).
+The MinIO service is a thin wrapper over pgsty/silo (the maintained MinIO fork; upstream minio/minio images were removed) that starts unattended and creates the `safebucket` bucket on first boot — Safebucket refuses to start if the bucket is missing, and Railway has no clean one-shot init containers, so the bucket creation is baked into the image instead. The MinIO service has its own public domain because the browser uploads and downloads files directly against it with presigned URLs (verified working, including CORS preflights, by `test/minio_test.sh`).
 
 ## Design choices (and how to upgrade past them)
 
@@ -43,8 +43,9 @@ Railway templates are assembled in the dashboard composer ([docs](https://docs.r
 ## Repo layout
 
 - `railway.template.json` — the full template definition (services, variables, volumes, canvas layout)
-- `Dockerfile.minio` + `minio-boot` — the storage image: upstream MinIO + unattended start + bucket creation
-- `test/minio_test.sh` — contract test for the storage image: boots with no start command, creates the bucket, answers path-style requests, allows browser CORS preflights
+- `Dockerfile.minio` + `minio-boot` — the storage image: pgsty/silo + unattended start + bucket creation
+- `test/minio_test.sh` — contract test for the storage image: boots with no start command, creates the bucket, answers path-style requests, allows browser CORS preflights, boots again after an in-place restart
+- `test/version_test.sh` — the image version label must be the upstream release plus -rN; CI pushes that tag and the template pins it
 - `.github/workflows/publish.yml` — builds the storage image, runs the contract test, pushes to `ghcr.io/<owner>/safebucket-railway-minio` on every push to `main`
 
 To publish the storage image, push this folder to a GitHub repo (e.g. `hmseeb/safebucket-railway`) — the workflow handles the rest. Run the contract test locally with:

@@ -232,7 +232,7 @@
     "minio": {
       "name": "MinIO",
       "source": {
-        "image": "ghcr.io/hmseeb/safebucket-railway-minio:latest"
+        "image": "ghcr.io/hmseeb/safebucket-railway-minio:RELEASE.2026-11-12T00-00-00Z-r1"
       },
       "deploy": {
         "healthcheckPath": "/minio/health/live",

@@ -1,8 +1,11 @@
 # MinIO with its server command and bucket creation baked in, so the Railway
 # template needs no startCommand and no separate init service.
-FROM minio/minio:RELEASE.2025-09-07T16-13-09Z
+# minio/minio was archived upstream and its Docker Hub images were removed, so
+# the base is pgsty/silo, the maintained fork (same S3 API, same on-disk format).
+FROM pgsty/silo:RELEASE.2026-11-12T00-00-00Z@sha256:c20d112390b9a9ce8c11b8af95ad35bcaa62f4759663c09c936cd8d2b511f329
 
 LABEL org.opencontainers.image.title="MinIO for Safebucket on Railway" \
+      org.opencontainers.image.version="RELEASE.2026-11-12T00-00-00Z-r1" \
       org.opencontainers.image.description="MinIO that starts unattended and creates the Safebucket storage bucket" \
       org.opencontainers.image.source="https://github.com/hmseeb/safebucket-railway"
 
